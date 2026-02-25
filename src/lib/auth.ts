@@ -1,3 +1,5 @@
+import { jwtDecode } from "jwt-decode";
+
 export type Role = "ADMIN" | "OPERATOR" | "VIEWER";
 
 export interface User {
@@ -7,19 +9,58 @@ export interface User {
     role: Role;
 }
 
+interface DecodedToken {
+    id: string;
+    username: string;
+    role: Role;
+    name: string;
+    exp: number;
+}
+
 export const getAuthToken = () => localStorage.getItem("access_token");
-export const setAuthToken = (token: string) => localStorage.getItem("access_token") ? localStorage.setItem("access_token", token) : localStorage.setItem("access_token", token);
+export const setAuthToken = (token: string) => localStorage.setItem("access_token", token);
 export const removeAuthToken = () => localStorage.removeItem("access_token");
 
 export const getUser = (): User | null => {
-    const user = localStorage.getItem("user");
-    return user ? JSON.parse(user) : null;
-};
+    const token = getAuthToken();
+    if (!token) return null;
 
-export const setUser = (user: User) => localStorage.setItem("user", JSON.stringify(user));
-export const removeUser = () => localStorage.removeItem("user");
+    try {
+        const decoded = jwtDecode<DecodedToken>(token);
+
+        // Check if token is expired
+        const currentTime = Date.now() / 1000;
+        if (decoded.exp < currentTime) {
+            removeAuthToken();
+            return null;
+        }
+
+        return {
+            id: decoded.id,
+            username: decoded.username,
+            name: decoded.name,
+            role: decoded.role,
+        };
+    } catch (error) {
+        removeAuthToken();
+        return null;
+    }
+};
 
 export const logout = () => {
     removeAuthToken();
-    removeUser();
+    window.location.href = "/login";
+};
+
+export const getRoleDefaultPath = (role: Role): string => {
+    switch (role) {
+        case "ADMIN":
+            return "/admin/dashboard";
+        case "OPERATOR":
+            return "/ops/assets";
+        case "VIEWER":
+            return "/dashboard";
+        default:
+            return "/login";
+    }
 };

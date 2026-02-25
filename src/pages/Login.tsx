@@ -1,25 +1,44 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { setAuthToken, setUser, User, Role } from "@/lib/auth";
+import { setAuthToken, Role, getRoleDefaultPath } from "@/lib/auth";
 import { toast } from "sonner";
+import { Shield, UserCog, Eye, Lock, User, Phone, CheckCircle2, AlertCircle } from "lucide-react";
+
+type LoginStep = "selection" | "form";
 
 const Login = () => {
+    const [step, setStep] = useState<LoginStep>("selection");
+    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+
     const navigate = useNavigate();
+
+    const handleRoleSelect = (role: Role) => {
+        setSelectedRole(role);
+        setStep("form");
+        setError("");
+    };
+
+    const handleBack = () => {
+        setStep("selection");
+        setIdentifier("");
+        setPassword("");
+        setError("");
+    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!identifier || !password) return;
+        if (!identifier || !password || !selectedRole) return;
 
         setIsLoading(true);
         setError("");
 
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for rural connections
+            const timeoutId = setTimeout(() => controller.abort(), 12000);
 
             const response = await fetch("http://localhost:5000/api/auth/login", {
                 method: "POST",
@@ -29,28 +48,31 @@ const Login = () => {
             });
 
             clearTimeout(timeoutId);
-
             const data = await response.json();
 
             if (response.ok) {
+                const verifiedRole = data.user.role as Role;
+
+                // CRITICAL: Check if verified role matches selected context
+                if (verifiedRole !== selectedRole) {
+                    setError(`Access type mismatch. This account is registered as ${verifiedRole}. Please select the correct role.`);
+                    setIsLoading(false);
+                    return;
+                }
+
                 setAuthToken(data.accessToken);
-                setUser(data.user);
+                toast.success(`Namaste, ${data.user.name}. Authentication Successful.`);
 
-                toast.success(`Welcome back, ${data.user.name}`);
-
-                // Role-based redirection
-                const role = data.user.role as Role;
-                if (role === "ADMIN") navigate("/");
-                else if (role === "OPERATOR") navigate("/");
-                else navigate("/"); // Default for now, generic dashboard
+                const targetPath = getRoleDefaultPath(verifiedRole);
+                navigate(targetPath, { replace: true });
             } else {
-                setError("Invalid username or password. Please try again.");
+                setError(data.message || "Invalid credentials. Please verify your details.");
             }
         } catch (err: any) {
             if (err.name === "AbortError") {
-                setError("Connection too slow. Please check your internet and try again.");
+                setError("Connection timed out. Please try again on a stable network.");
             } else {
-                setError("Unable to connect to server. Please try again later.");
+                setError("Network error. Unable to reach the central administration server.");
             }
         } finally {
             setIsLoading(false);
@@ -58,90 +80,170 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white p-4 font-sans">
-            <div className="w-full max-w-md border-2 border-slate-200 p-8 rounded-lg">
-                <div className="mb-8 text-center">
-                    <h1 className="text-3xl font-bold text-slate-900 border-b-4 border-primary inline-block pb-1">
-                        Village Hub Login
-                    </h1>
-                    <p className="mt-4 text-slate-600 font-medium">
-                        Authorized Personnel Only
-                    </p>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8faf7] p-4">
+            {/* Header Section */}
+            <div className="w-full max-w-xl text-center mb-10">
+                <div className="flex justify-center mb-4">
+                    <div className="bg-primary p-3 rounded-full shadow-md border-4 border-white">
+                        <Shield className="h-10 w-10 text-white" />
+                    </div>
                 </div>
+                <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight font-heading">
+                    VILLAGE HUB DIGITAL SYSTEM
+                </h1>
+                <p className="text-slate-600 font-bold mt-2 uppercase tracking-widest text-xs border-y border-slate-200 py-2 inline-block px-4">
+                    Government of Rural Administration · Official Portal
+                </p>
+            </div>
 
-                <form onSubmit={handleLogin} className="space-y-6">
-                    <div>
-                        <label
-                            htmlFor="identifier"
-                            className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide"
+            <div className="w-full max-w-[500px] bg-white border-2 border-slate-200 rounded-xl shadow-sm overflow-hidden transition-all duration-300">
+                <div className="bg-primary/5 px-8 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <span className="text-sm font-bold text-primary flex items-center gap-2">
+                        {step === "selection" ? "STEP 1: SELECT ACCESS" : "STEP 2: VERIFY IDENTITY"}
+                    </span>
+                    {step === "form" && (
+                        <button
+                            onClick={handleBack}
+                            className="text-[10px] font-bold text-slate-400 hover:text-primary underline uppercase"
                         >
-                            Username / Mobile Number
-                        </label>
-                        <input
-                            id="identifier"
-                            type="text"
-                            required
-                            className="w-full h-14 px-4 text-lg border-2 border-slate-300 rounded focus:border-primary focus:ring-0 outline-none transition-colors"
-                            placeholder="e.g. 9876543210"
-                            value={identifier}
-                            onChange={(e) => setIdentifier(e.target.value)}
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="password"
-                            className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide"
-                        >
-                            Password
-                        </label>
-                        <input
-                            id="password"
-                            type="password"
-                            required
-                            className="w-full h-14 px-4 text-lg border-2 border-slate-300 rounded focus:border-primary focus:ring-0 outline-none transition-colors"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    {error && (
-                        <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm font-bold">
-                            {error}
-                        </div>
+                            Change Role
+                        </button>
                     )}
-
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className={`w-full h-16 text-xl font-bold rounded transition-all flex items-center justify-center ${isLoading
-                                ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                                : "bg-primary text-white hover:bg-primary/90 active:scale-[0.98]"
-                            }`}
-                    >
-                        {isLoading ? (
-                            <span className="flex items-center gap-2">
-                                <svg className="animate-spin h-6 w-6 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Connecting...
-                            </span>
-                        ) : "LOGIN"}
-                    </button>
-                </form>
-
-                <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-                    <p className="text-xs text-slate-400 font-medium">
-                        System Version 1.0.4 · Village Hub Digital administration
-                    </p>
                 </div>
+
+                <div className="p-8">
+                    {step === "selection" ? (
+                        <div className="space-y-4">
+                            <h2 className="text-xl font-bold text-slate-800 mb-6 text-center">Select Access Type</h2>
+
+                            <RoleCard
+                                icon={<UserCog className="h-6 w-6" />}
+                                title="ADMIN"
+                                description="Full system control & staff management"
+                                onClick={() => handleRoleSelect("ADMIN")}
+                            />
+
+                            <RoleCard
+                                icon={<Lock className="h-6 w-6" />}
+                                title="OPERATOR"
+                                description="Asset registry & complaint management"
+                                onClick={() => handleRoleSelect("OPERATOR")}
+                            />
+
+                            <RoleCard
+                                icon={<Eye className="h-6 w-6" />}
+                                title="VIEWER"
+                                description="Read-only dashboard for monitoring"
+                                onClick={() => handleRoleSelect("VIEWER")}
+                            />
+                        </div>
+                    ) : (
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div className="mb-4 bg-slate-50 p-4 rounded-lg border flex items-center gap-3">
+                                <div className="bg-primary/10 p-2 rounded text-primary">
+                                    {selectedRole === "ADMIN" ? <UserCog size={20} /> : selectedRole === "OPERATOR" ? <Lock size={20} /> : <Eye size={20} />}
+                                </div>
+                                <div>
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Selected Role</div>
+                                    <div className="font-bold text-slate-800">{selectedRole}</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider flex items-center gap-1">
+                                    <User size={12} /> Username / Mobile Number
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    autoFocus
+                                    className="w-full h-14 px-4 text-lg border-2 border-slate-200 rounded-lg focus:border-primary focus:ring-0 outline-none transition-all placeholder:text-slate-300 font-medium"
+                                    placeholder="Enter your ID"
+                                    value={identifier}
+                                    onChange={(e) => setIdentifier(e.target.value)}
+                                    disabled={isLoading}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider flex items-center gap-1">
+                                    <CheckCircle2 size={12} /> Password / Security PIN
+                                </label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full h-14 px-4 text-lg border-2 border-slate-200 rounded-lg focus:border-primary focus:ring-0 outline-none transition-all placeholder:text-slate-300 font-medium"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    disabled={isLoading}
+                                />
+                            </div>
+
+                            {error && (
+                                <div className="p-4 bg-red-50 border-2 border-red-100 rounded-lg flex items-start gap-3">
+                                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+                                    <p className="text-sm font-bold text-red-700 leading-tight">{error}</p>
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className={`w-full h-16 text-lg font-bold rounded-lg transition-all flex items-center justify-center gap-3 shadow-md ${isLoading
+                                    ? "bg-slate-200 text-slate-400 cursor-not-allowed border-0"
+                                    : "bg-primary text-white hover:bg-[#1a3d2e] active:scale-[0.98] border-b-4 border-[#0e221a]"
+                                    }`}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        AUTHENTICATING...
+                                    </>
+                                ) : "SECURE LOGIN"}
+                            </button>
+                        </form>
+                    )}
+                </div>
+            </div>
+
+            {/* Footer Notice */}
+            <div className="mt-8 text-center max-w-md">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-relaxed">
+                    This system is for authorized government use only.
+                    Unauthorized access attempts are logged and monitored.
+                    <br />
+                    Village Hub © 2026 · Digital India Initiative
+                </p>
             </div>
         </div>
     );
 };
 
+function RoleCard({ icon, title, description, onClick }: {
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className="w-full p-5 text-left border-2 border-slate-100 rounded-xl hover:border-primary hover:bg-primary/5 transition-all group flex items-center gap-5 shadow-sm hover:shadow-md"
+        >
+            <div className="bg-slate-50 p-3 rounded-lg text-slate-400 group-hover:text-primary group-hover:bg-white transition-colors border group-hover:border-primary/20">
+                {icon}
+            </div>
+            <div>
+                <h3 className="font-bold text-slate-800 tracking-tight">{title}</h3>
+                <p className="text-xs text-slate-500 font-medium">{description}</p>
+            </div>
+        </button>
+    );
+}
+
 export default Login;
+

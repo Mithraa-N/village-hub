@@ -12,13 +12,13 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Security Middleware
-app.use(helmet()); // Sets various HTTP headers for security
+app.use(helmet());
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:8080", // Restrict to frontend URL
+    origin: ["http://localhost:5173", "http://localhost:8080"],
     credentials: true
 }));
-app.use(morgan("combined")); // Standard production logging
-app.use(express.json()); // Body parser
+app.use(morgan("combined"));
+app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -27,11 +27,12 @@ app.use("/api/v1", villageRoutes);
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error(err.stack);
-    res.status(0o500).json({
+    res.status(500).json({
         message: "Something went wrong. Please contact support.",
         error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
 });
+
 
 app.listen(PORT, () => {
     console.log(`[SERVER] Village Hub Secure Backend running on port ${PORT}`);

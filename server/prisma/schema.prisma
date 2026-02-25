@@ -30,6 +30,46 @@ model RefreshToken {
   createdAt DateTime @default(now())
 }
 
+model Asset {
+  id               String   @id @default(uuid())
+  name             String
+  category         String   // School, Water Point, etc.
+  ward             String
+  location         String
+  condition        String   // Working, Faulty, etc.
+  lastInspection   DateTime @default(now())
+  responsibleRole  String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  complaints       Complaint[]
+}
+
+model Complaint {
+  id            String    @id @default(uuid())
+  title         String
+  description   String
+  category      String
+  status        String    @default("Submitted")
+  submittedBy   String    // Name of citizen
+  assignedTo    String?   // Name of staff
+  submittedDate DateTime  @default(now())
+  resolvedDate  DateTime?
+  ward          String
+  assetId       String?
+  asset         Asset?    @relation(fields: [assetId], references: [id])
+}
+
+model BudgetEntry {
+  id             String   @id @default(uuid())
+  category       String
+  allocated      Float
+  spent          Float    @default(0)
+  pending        Float    @default(0)
+  linkedActivity String
+  fiscalYear     String
+  createdAt      DateTime @default(now())
+}
+
 model AuditLog {
   id        String   @id @default(uuid())
   userId    String?
@@ -38,3 +78,4 @@ model AuditLog {
   details   String?
   timestamp DateTime @default(now())
 }
+

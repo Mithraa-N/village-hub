@@ -2,26 +2,37 @@ import { Router } from "express";
 import { authenticateToken, authorizeRoles } from "../middleware/auth";
 import { Role } from "../types";
 import { registerUser } from "../controllers/auth.controller";
+import { getUsers, toggleUserStatus } from "../controllers/user.controller";
+import {
+    getAssets, createAsset, updateAsset,
+    getComplaints, createComplaint, updateComplaintStatus,
+    getBudgets, createBudgetEntry, getDashboardSummary
+} from "../controllers/village.controller";
 
 const router = Router();
 
-// Dashboard - Accessible to all authenticated users
-router.get("/dashboard", authenticateToken, (req, res) => {
-    res.json({ message: "Welcome to Village Hub Dashboard", user: req.user });
-});
+// Dashboard Summary
+router.get("/dashboard/stats", authenticateToken, getDashboardSummary);
 
-// Assets - Operators and Admins can update
-router.post("/assets", authenticateToken, authorizeRoles(Role.ADMIN, Role.OPERATOR), (req, res) => {
-    res.json({ message: "Asset created/updated successfully" });
-});
-
-// Budgets - Admins only
-router.post("/budgets", authenticateToken, authorizeRoles(Role.ADMIN), (req, res) => {
-    res.json({ message: "Budget record modified successfully" });
-});
-
-// User Management - Admin only, prevent privilege escalation
+// User Management
+router.get("/users", authenticateToken, authorizeRoles(Role.ADMIN), getUsers);
 router.post("/users", authenticateToken, authorizeRoles(Role.ADMIN), registerUser);
+router.patch("/users/:id/status", authenticateToken, authorizeRoles(Role.ADMIN), toggleUserStatus);
+
+// Assets
+router.get("/assets", authenticateToken, getAssets);
+router.post("/assets", authenticateToken, authorizeRoles(Role.ADMIN, Role.OPERATOR), createAsset);
+router.patch("/assets/:id", authenticateToken, authorizeRoles(Role.ADMIN, Role.OPERATOR), updateAsset);
+
+// Complaints
+router.get("/complaints", authenticateToken, getComplaints);
+router.post("/complaints", authenticateToken, createComplaint);
+router.patch("/complaints/:id/status", authenticateToken, authorizeRoles(Role.ADMIN, Role.OPERATOR), updateComplaintStatus);
+
+// Budgets
+router.get("/budgets", authenticateToken, authorizeRoles(Role.ADMIN), getBudgets);
+router.post("/budgets", authenticateToken, authorizeRoles(Role.ADMIN), createBudgetEntry);
 
 export default router;
+
 

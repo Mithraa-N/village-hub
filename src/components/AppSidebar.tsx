@@ -10,7 +10,9 @@ import {
   LogOut,
   User as UserIcon,
   UserCog,
+  FileBarChart,
 } from "lucide-react";
+
 import { useState } from "react";
 import { logout, getUser } from "@/lib/auth";
 
@@ -26,12 +28,15 @@ export function AppSidebar() {
   };
 
   const navItems = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["ADMIN", "OPERATOR", "VIEWER"] },
-    { title: "Assets", url: "/assets", icon: Building2, roles: ["ADMIN", "OPERATOR"] },
+    { title: "Dashboard", url: user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "OPERATOR", "VIEWER"] },
+    { title: "Assets", url: "/ops/assets", icon: Building2, roles: ["ADMIN", "OPERATOR"] },
     { title: "Complaints", url: "/complaints", icon: MessageSquareWarning, roles: ["ADMIN", "OPERATOR"] },
-    { title: "Budget", url: "/budget", icon: IndianRupee, roles: ["ADMIN"] },
-    { title: "Users", url: "/users", icon: UserCog, roles: ["ADMIN"] },
+    { title: "Budget", url: "/admin/budget", icon: IndianRupee, roles: ["ADMIN"] },
+    { title: "Users", url: "/admin/users", icon: UserCog, roles: ["ADMIN"] },
+    { title: "Reports", url: "/admin/reports", icon: FileBarChart, roles: ["ADMIN"] },
   ].filter(item => user && item.roles.includes(user.role));
+
+
 
 
   return (
