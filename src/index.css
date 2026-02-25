@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Forest green civic palette */
+    --background: 40 20% 97%;
+    --foreground: 200 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 200 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 15% 15%;
+
+    /* Deep forest green */
+    --primary: 152 45% 25%;
+    --primary-foreground: 40 20% 97%;
+
+    /* Warm stone */
+    --secondary: 35 15% 90%;
+    --secondary-foreground: 200 15% 15%;
+
+    --muted: 35 10% 93%;
+    --muted-foreground: 200 10% 45%;
+
+    --accent: 35 15% 88%;
+    --accent-foreground: 200 15% 15%;
+
+    /* Status colors */
+    --destructive: 0 65% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 15%;
+
+    --success: 152 55% 35%;
+    --success-foreground: 0 0% 100%;
+
+    --info: 210 60% 45%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 35 12% 85%;
+    --input: 35 12% 85%;
+    --ring: 152 45% 25%;
+
+    --radius: 0.375rem;
+
+    --sidebar-background: 152 35% 18%;
+    --sidebar-foreground: 40 20% 92%;
+    --sidebar-primary: 40 20% 97%;
+    --sidebar-primary-foreground: 152 35% 18%;
+    --sidebar-accent: 152 30% 24%;
+    --sidebar-accent-foreground: 40 20% 92%;
+    --sidebar-border: 152 25% 25%;
+    --sidebar-ring: 152 45% 40%;
+
+    --font-heading: 'JetBrains Mono', monospace;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .status-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+
+  .status-working {
+    @apply bg-success/15 text-success;
+  }
+
+  .status-minor {
+    @apply bg-warning/15 text-warning;
+  }
+
+  .status-major {
+    @apply bg-destructive/15 text-destructive;
+  }
+
+  .status-repair {
+    @apply bg-info/15 text-info;
+  }
+
+  .status-decommissioned {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .stat-card {
+    @apply bg-card border rounded-md p-4;
+  }
+
+  .page-header {
+    @apply mb-6;
+  }
+
+  .page-header h1 {
+    @apply text-2xl font-bold tracking-tight;
+  }
+
+  .page-header p {
+    @apply text-muted-foreground text-sm mt-1;
+  }
+}
