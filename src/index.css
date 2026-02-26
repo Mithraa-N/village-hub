@@ -6,9 +6,11 @@
 
 @layer base {
   :root {
-    /* Forest green civic palette */
+    /* Official Government Visual Standards */
     --background: 0 0% 100%;
+    /* White dominant surface */
     --foreground: 215 25% 15%;
+    /* Primary Text: #1F2933 approx */
 
     --card: 0 0% 100%;
     --card-foreground: 215 25% 15%;
@@ -16,49 +18,57 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 15%;
 
-    /* Official Government green */
-    --primary: 160 55% 18%; 
+    /* Official Palette */
+    --primary: 135 41% 31%;
+    /* #2F6F3E */
     --primary-foreground: 0 0% 100%;
 
-    /* Bureaucratic stone/grey */
-    --secondary: 160 10% 96%;
-    --secondary-foreground: 160 40% 10%;
+    --secondary: 147 29% 96%;
+    /* #F1F8F4 Soft Green Surface */
+    --secondary-foreground: 135 41% 15%;
 
-    --muted: 160 10% 92%;
-    --muted-foreground: 160 10% 45%;
+    --muted: 147 20% 92%;
+    --muted-foreground: 215 15% 40%;
+    /* Secondary Text: #4B5563 approx */
 
-    --accent: 160 30% 94%;
-    --accent-foreground: 160 60% 15%;
+    --accent: 145 35% 91%;
+    /* #D6EDE0 Divider Green */
+    --accent-foreground: 135 41% 20%;
 
-    /* Trust colors */
-    --destructive: 0 60% 40%;
+    /* Status & Utility */
+    --destructive: 0 72% 35%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 45 90% 40%;
+    --warning: 35 90% 35%;
     --warning-foreground: 0 0% 100%;
 
-    --success: 160 60% 25%;
+    --success: 142 70% 25%;
     --success-foreground: 0 0% 100%;
 
-    --info: 210 50% 30%;
+    --info: 210 60% 30%;
     --info-foreground: 0 0% 100%;
 
-    --border: 0 0% 88%;
+    --border: 145 25% 85%;
+    /* Subtle green border */
     --input: 0 0% 88%;
-    --ring: 160 55% 18%;
+    --ring: 135 41% 31%;
 
-    --radius: 4px; /* More formal, less rounded */
+    --radius: 2px;
+    /* More formal, deployable look */
 
-    --sidebar-background: 160 50% 12%;
-    --sidebar-foreground: 160 20% 95%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 160 50% 12%;
-    --sidebar-accent: 160 40% 18%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 160 40% 20%;
-    --sidebar-ring: 160 50% 12%;
+    /* Sidebar - Soft Green Surface */
+    --sidebar-background: 147 29% 96%;
+    /* #F1F8F4 */
+    --sidebar-foreground: 135 41% 20%;
+    --sidebar-primary: 135 41% 31%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 145 35% 91%;
+    /* #D6EDE0 Active BG */
+    --sidebar-accent-foreground: 135 41% 15%;
+    --sidebar-border: 145 25% 85%;
+    --sidebar-ring: 135 41% 31%;
 
-    --font-heading: 'Inter', sans-serif; /* Formal sans-serif */
+    --font-heading: 'Inter', sans-serif;
     --font-body: 'Inter', sans-serif;
   }
 }
@@ -74,7 +84,12 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
     letter-spacing: -0.02em;
   }
@@ -82,7 +97,7 @@
 
 @layer components {
   .status-badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    @apply inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium;
   }
 
   .status-working {
@@ -106,7 +121,7 @@
   }
 
   .stat-card {
-    @apply bg-card border rounded-md p-4;
+    @apply bg-card border rounded-sm p-4;
   }
 
   .page-header {

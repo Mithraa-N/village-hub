@@ -31,10 +31,10 @@ const Budget = () => {
         const data = await response.json();
         setEntries(data);
       } else {
-        toast.error("Failed to load budget data");
+        toast.error("Failed to fetch official budget allocation records");
       }
     } catch (err) {
-      toast.error("Network error on budget page");
+      toast.error("Network synchronization failure");
     } finally {
       setIsLoading(false);
     }
@@ -61,75 +61,85 @@ const Budget = () => {
 
   return (
     <AppLayout>
-      <div className="page-header">
-        <h1>Budget Tracking</h1>
-        <p>Category-level budget allocation and expenditure · FY 2025-26</p>
+      <div className="page-header border-b pb-6 mb-8 flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            <Banknote className="h-6 w-6 text-primary" />
+            Budgetary Allocation & Funds
+          </h1>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">Village & Panchayat Financial Oversight · FY 2025-26</p>
+        </div>
+        <div className="flex gap-4">
+          <div className="text-right border-r pr-4 border-slate-200">
+            <span className="text-[10px] font-bold text-slate-400 block uppercase">Total Utilization</span>
+            <span className="text-lg font-bold text-primary">{Math.round((totalSpent / totalAllocated) * 100)}%</span>
+          </div>
+          <button className="h-10 px-6 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] shadow-sm transition-all border-b-2 border-[#0e221a]">
+            Expenditure Report
+          </button>
+        </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <BudgetStatCard
-          icon={<Wallet className="h-5 w-5 text-blue-500" />}
+          icon={<Wallet className="h-5 w-5" />}
           label="Total Allocated"
           value={formatCurrency(totalAllocated)}
-          color="border-blue-500/20"
         />
         <BudgetStatCard
-          icon={<TrendingUp className="h-5 w-5 text-green-600" />}
-          label="Actual Spent"
+          icon={<TrendingUp className="h-5 w-5" />}
+          label="Actual Expenditure"
           value={formatCurrency(totalSpent)}
-          color="border-green-600/20"
         />
         <BudgetStatCard
-          icon={<Clock className="h-5 w-5 text-orange-500" />}
-          label="Pending Approval"
+          icon={<ClockIcon className="h-5 w-5" />}
+          label="Pending Clearance"
           value={formatCurrency(totalPending)}
-          color="border-orange-500/20"
         />
         <BudgetStatCard
-          icon={<ShieldCheck className="h-5 w-5 text-primary" />}
-          label="Remaining Fund"
+          icon={<ShieldCheck className="h-5 w-5" />}
+          label="Available Balance"
           value={formatCurrency(totalRemaining)}
-          color="border-primary/20"
         />
       </div>
 
-      {/* Budget Breakdown */}
-      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+      {/* Breakdown Grid */}
+      <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Departmental Utilization Breakdown</h2>
+      <div className="grid lg:grid-cols-2 gap-4 mb-10">
         {entries.map(entry => {
           const utilization = Math.round((entry.spent / entry.allocated) * 100);
-          const pendingPercent = Math.round((entry.pending / entry.allocated) * 100);
 
           return (
-            <div key={entry.id} className="bg-card border-2 rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
-              <div className="flex items-start justify-between mb-4">
+            <div key={entry.id} className="bg-white border border-slate-200 p-5 rounded-sm shadow-sm">
+              <div className="flex items-start justify-between mb-3 border-b border-slate-50 pb-3">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">{entry.category}</h3>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{entry.linkedActivity}</p>
+                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">{entry.category}</h3>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">{entry.linkedActivity}</p>
                 </div>
-                <span className="font-mono text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">{entry.id.split('-')[0]}</span>
+                <span className="font-bold text-[9px] bg-secondary px-2 py-0.5 rounded-sm text-slate-500 border border-slate-200">ID: {entry.id.split('-')[0]}</span>
               </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-[10px] font-bold uppercase text-slate-500">
-                  <span>Utilization</span>
+              <div className="space-y-1.5 mb-4">
+                <div className="flex justify-between text-[9px] font-bold uppercase text-slate-500">
+                  <span>Current Utilization</span>
                   <span>{utilization}%</span>
                 </div>
-                <Progress value={utilization} className="h-2" />
+                <Progress value={utilization} className="h-1.5 bg-slate-100" />
               </div>
 
-              <div className="grid grid-cols-3 gap-2 py-3 border-t-2 border-slate-50">
-                <div className="text-center">
-                  <div className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Allocated</div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-secondary/30 p-2 rounded-sm border border-slate-100">
+                  <div className="text-[8px] font-bold text-slate-400 uppercase">Allocated</div>
                   <div className="text-xs font-bold text-slate-800">{formatCurrency(entry.allocated)}</div>
                 </div>
-                <div className="text-center border-x-2 border-slate-50">
-                  <div className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Spent</div>
-                  <div className="text-xs font-bold text-green-600">{formatCurrency(entry.spent)}</div>
+                <div className="bg-slate-50 p-2 rounded-sm border border-slate-100">
+                  <div className="text-[8px] font-bold text-slate-400 uppercase">Spent</div>
+                  <div className="text-xs font-bold text-primary">{formatCurrency(entry.spent)}</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Pending</div>
-                  <div className="text-xs font-bold text-orange-500">{formatCurrency(entry.pending)}</div>
+                <div className="bg-white p-2 rounded-sm border border-slate-100">
+                  <div className="text-[8px] font-bold text-slate-400 uppercase">Pending</div>
+                  <div className="text-xs font-bold text-warning">{formatCurrency(entry.pending)}</div>
                 </div>
               </div>
             </div>
@@ -139,38 +149,35 @@ const Budget = () => {
 
       {/* Detail Table */}
       <div className="space-y-4">
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <Banknote className="h-5 w-5 text-primary" />
-          Detailed Budget Ledger
-        </h2>
-        <div className="bg-card border-2 rounded-xl overflow-hidden shadow-sm">
+        <h2 className="text-xs font-bold text-slate-800 uppercase tracking-widest border-l-4 border-primary pl-3">Official Budget Ledger</h2>
+        <div className="bg-white border border-slate-200 rounded-sm overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 bg-slate-50">
-                <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase text-[10px]">Category</th>
-                <th className="text-right px-4 py-3 font-bold text-slate-500 uppercase text-[10px]">Allocated</th>
-                <th className="text-right px-4 py-3 font-bold text-slate-500 uppercase text-[10px]">Spent</th>
-                <th className="text-right px-4 py-3 font-bold text-slate-500 uppercase text-[10px]">Pending</th>
-                <th className="text-right px-4 py-3 font-bold text-slate-500 uppercase text-[10px]">Balance</th>
-                <th className="text-center px-4 py-3 font-bold text-slate-500 uppercase text-[10px]">Util.</th>
+              <tr className="bg-secondary/50 border-b-2">
+                <th className="text-left px-5 py-4 font-bold text-slate-600 uppercase text-[10px]">Head of Account</th>
+                <th className="text-right px-5 py-4 font-bold text-slate-600 uppercase text-[10px]">Allocation</th>
+                <th className="text-right px-5 py-4 font-bold text-slate-600 uppercase text-[10px]">Expenditure</th>
+                <th className="text-right px-5 py-4 font-bold text-slate-600 uppercase text-[10px]">Pending</th>
+                <th className="text-right px-5 py-4 font-bold text-slate-600 uppercase text-[10px]">Balance</th>
+                <th className="text-center px-5 py-4 font-bold text-slate-600 uppercase text-[10px]">Util.%</th>
               </tr>
             </thead>
-            <tbody className="divide-y-2">
+            <tbody className="divide-y">
               {entries.map(entry => {
                 const remaining = entry.allocated - entry.spent - entry.pending;
                 const util = Math.round((entry.spent / entry.allocated) * 100);
                 return (
                   <tr key={entry.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="font-bold text-slate-800">{entry.category}</div>
-                      <div className="text-[10px] text-slate-400 font-medium">{entry.fiscalYear}</div>
+                    <td className="px-5 py-4">
+                      <div className="font-bold text-slate-800 text-xs">{entry.category}</div>
+                      <div className="text-[9px] text-slate-400 font-bold uppercase">{entry.fiscalYear}</div>
                     </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">{formatCurrency(entry.allocated)}</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-green-600">{formatCurrency(entry.spent)}</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-orange-500">{formatCurrency(entry.pending)}</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">{formatCurrency(remaining)}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${util > 80 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                    <td className="px-5 py-4 text-right font-bold text-slate-700 text-xs">{formatCurrency(entry.allocated)}</td>
+                    <td className="px-5 py-4 text-right font-bold text-primary text-xs">{formatCurrency(entry.spent)}</td>
+                    <td className="px-5 py-4 text-right font-bold text-[#b45309] text-xs">{formatCurrency(entry.pending)}</td>
+                    <td className="px-5 py-4 text-right font-bold text-slate-900 text-xs">{formatCurrency(remaining)}</td>
+                    <td className="px-5 py-4 text-center">
+                      <span className={`px-2 py-0.5 rounded-sm text-[9px] font-bold ${util > 85 ? 'bg-destructive text-white' : 'bg-success text-white'}`}>
                         {util}%
                       </span>
                     </td>
@@ -179,13 +186,13 @@ const Budget = () => {
               })}
             </tbody>
             <tfoot>
-              <tr className="bg-slate-900 text-white font-bold">
-                <td className="px-4 py-4 text-sm uppercase">Total Village Fund</td>
-                <td className="px-4 py-4 text-right font-mono">{formatCurrency(totalAllocated)}</td>
-                <td className="px-4 py-4 text-right font-mono text-green-400">{formatCurrency(totalSpent)}</td>
-                <td className="px-4 py-4 text-right font-mono text-orange-400">{formatCurrency(totalPending)}</td>
-                <td className="px-4 py-4 text-right font-mono">{formatCurrency(totalRemaining)}</td>
-                <td className="px-4 py-4 text-center">{Math.round((totalSpent / totalAllocated) * 100)}%</td>
+              <tr className="bg-primary text-white font-bold">
+                <td className="px-5 py-4 text-[10px] uppercase tracking-widest">Village Consolidated Fund</td>
+                <td className="px-5 py-4 text-right text-xs">{formatCurrency(totalAllocated)}</td>
+                <td className="px-5 py-4 text-right text-xs">{formatCurrency(totalSpent)}</td>
+                <td className="px-5 py-4 text-right text-xs">{formatCurrency(totalPending)}</td>
+                <td className="px-5 py-4 text-right text-xs">{formatCurrency(totalRemaining)}</td>
+                <td className="px-5 py-4 text-center text-xs">{Math.round((totalSpent / totalAllocated) * 100)}%</td>
               </tr>
             </tfoot>
           </table>
@@ -195,26 +202,24 @@ const Budget = () => {
   );
 };
 
-function BudgetStatCard({ icon, label, value, color }: {
+function BudgetStatCard({ icon, label, value }: {
   icon: React.ReactNode;
   label: string;
   value: string;
-  color: string;
 }) {
   return (
-    <div className={`bg-card border-2 ${color} rounded-2xl p-5 shadow-sm hover:shadow-md transition-all`}>
-      <div className="flex items-center gap-2 mb-3">
-        <div className="p-2 rounded-lg bg-white shadow-sm border">{icon}</div>
+    <div className="bg-white border border-slate-200 p-5 rounded-sm shadow-sm transition-all">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="text-primary">{icon}</div>
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{label}</span>
       </div>
-      <div className="text-2xl font-bold tracking-tight text-slate-900">{value}</div>
+      <div className="text-2xl font-bold tracking-tight text-slate-800">{value}</div>
     </div>
   );
 }
 
-const Clock = ({ className }: { className?: string }) => (
+const ClockIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
 );
 
 export default Budget;
-
