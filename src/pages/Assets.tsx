@@ -4,6 +4,7 @@ import { getConditionClass, type AssetCategory, type AssetCondition } from "@/da
 import { Search, Filter, Plus, Edit2, Loader2, Building2 } from "lucide-react";
 import { getUser, getAuthToken } from "@/lib/auth";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Asset {
   id: string;
@@ -20,6 +21,82 @@ const Assets = () => {
   const [filter, setFilter] = useState<AssetCondition | "All">("All");
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [updateCondition, setUpdateCondition] = useState<string>("Working");
+  const [isNewAssetModalOpen, setIsNewAssetModalOpen] = useState(false);
+  const [newAssetData, setNewAssetData] = useState({ name: "", category: "Infrastructure", ward: "General", location: "", condition: "Working", responsibleRole: "ADMIN" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleCreateAsset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("http://localhost:5000/api/v1/assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${getAuthToken()}` },
+        body: JSON.stringify(newAssetData)
+      });
+      if (response.ok) {
+        toast.success("New asset registered officially.");
+        fetchAssets();
+        setIsNewAssetModalOpen(false);
+        setNewAssetData({ name: "", category: "Infrastructure", ward: "General", location: "", condition: "Working", responsibleRole: "ADMIN" });
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Failed to register asset");
+      }
+    } catch {
+      toast.error("Network communication failure");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateCondition = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAsset) return;
+
+    if (updateCondition === "Working" || updateCondition === "Operational") {
+      try {
+        const resComplaints = await fetch('http://localhost:5000/api/v1/complaints', {
+          headers: { "Authorization": `Bearer ${getAuthToken()}` }
+        });
+        if (resComplaints.ok) {
+          const complaints = await resComplaints.json();
+          const openIssues = complaints.filter((c: any) => c.asset?.id === selectedAsset.id && !["Resolved", "Closed"].includes(c.status));
+          if (openIssues.length > 0) {
+            toast.error(`Validation Error: ${openIssues.length} active repair issue(s) block this asset from being marked 'Working'.`);
+            return;
+          }
+        }
+      } catch (err) {
+        toast.error("Network communication failure checking repair records.");
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/v1/assets/${selectedAsset.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAuthToken()}`
+        },
+        body: JSON.stringify({ condition: updateCondition })
+      });
+      if (response.ok) {
+        toast.success("Asset condition officially synced.");
+        fetchAssets();
+        setSelectedAsset(null);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Server rejected modification");
+      }
+    } catch {
+      toast.error("Network communication failure");
+    }
+  };
 
   const fetchAssets = async () => {
     try {
@@ -73,7 +150,10 @@ const Assets = () => {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tighter uppercase">Infrastructure Asset Registry</h1>
           <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">Ministry of Rural Development · Inventory Control</p>
         </div>
-        <button className="h-12 px-8 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] shadow-sm transition-all border-b-2 border-[#0e221a]">
+        <button
+          onClick={() => setIsNewAssetModalOpen(true)}
+          className="h-12 px-8 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] shadow-sm transition-all border-b-2 border-[#0e221a]"
+        >
           Register New Asset
         </button>
       </div>
@@ -162,7 +242,10 @@ const Assets = () => {
                 </td>
                 <td className="px-6 py-5 text-right">
                   <div className="flex justify-end gap-3">
-                    <button className="px-3 py-1.5 border border-slate-200 text-[9px] font-bold text-slate-600 hover:bg-slate-50 hover:text-primary transition-all uppercase tracking-widest rounded-sm">
+                    <button
+                      onClick={() => { setSelectedAsset(asset); setUpdateCondition(asset.condition); }}
+                      className="px-3 py-1.5 border border-slate-200 text-[9px] font-bold text-slate-600 hover:bg-slate-50 hover:text-primary transition-all uppercase tracking-widest rounded-sm"
+                    >
                       Update Log
                     </button>
                     <button className="px-3 py-1.5 border border-slate-200 text-[9px] font-bold text-slate-400 hover:text-destructive hover:bg-destructive/5 transition-all uppercase tracking-widest rounded-sm">
@@ -191,6 +274,93 @@ const Assets = () => {
           <span className="text-[9px] font-bold text-slate-300 uppercase">Export Registry (CSV/PDF)</span>
         </div>
       </div>
+
+      {/* Update Condition Modal */}
+      <Dialog open={!!selectedAsset} onOpenChange={(open) => !open && setSelectedAsset(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold uppercase tracking-tight text-slate-800">Update Asset Condition Log</DialogTitle>
+          </DialogHeader>
+          {selectedAsset && (
+            <form onSubmit={handleUpdateCondition} className="space-y-4 py-4">
+              <div className="bg-slate-50 p-3 rounded-sm border border-slate-100 mb-4">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Infrastructure</div>
+                <div className="text-xs font-bold text-slate-900 uppercase">{selectedAsset.name}</div>
+                <div className="text-[9px] font-bold text-primary mt-1 uppercase tracking-widest">{selectedAsset.id}</div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">New System Condition *</label>
+                <select
+                  className="w-full h-10 px-3 bg-white border border-slate-200 rounded-sm text-sm outline-none focus:border-primary font-medium"
+                  value={updateCondition}
+                  onChange={e => setUpdateCondition(e.target.value)}
+                >
+                  <option value="Working">Working / Operational</option>
+                  <option value="Minor Issue">Minor Issue Detected</option>
+                  <option value="Major Fault">Major Fault / Offline</option>
+                  <option value="Under Repair">Under Repair</option>
+                </select>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <button type="submit" className="h-10 px-6 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] shadow-sm transition-all border-b-2 border-[#0e221a]">
+                  Modify Official Record
+                </button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Register New Asset Modal */}
+      <Dialog open={isNewAssetModalOpen} onOpenChange={setIsNewAssetModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold uppercase tracking-tight text-slate-800">Register New Asset</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateAsset} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Asset Name *</label>
+              <input required value={newAssetData.name} onChange={e => setNewAssetData({ ...newAssetData, name: e.target.value })} className="w-full h-10 px-3 border border-slate-200 rounded-sm text-sm" placeholder="e.g. Village Solar Pump #4" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category *</label>
+                <select value={newAssetData.category} onChange={e => setNewAssetData({ ...newAssetData, category: e.target.value })} className="w-full h-10 px-3 bg-white border border-slate-200 rounded-sm text-sm font-medium">
+                  <option>Infrastructure</option><option>Equipment</option><option>Facilities</option><option>Vehicles</option><option>Digital</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ward *</label>
+                <input required value={newAssetData.ward} onChange={e => setNewAssetData({ ...newAssetData, ward: e.target.value })} className="w-full h-10 px-3 border border-slate-200 rounded-sm text-sm" placeholder="e.g. Ward 3" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Location *</label>
+              <input required value={newAssetData.location} onChange={e => setNewAssetData({ ...newAssetData, location: e.target.value })} className="w-full h-10 px-3 border border-slate-200 rounded-sm text-sm" placeholder="e.g. Main Square" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Condition *</label>
+                <select value={newAssetData.condition} onChange={e => setNewAssetData({ ...newAssetData, condition: e.target.value })} className="w-full h-10 px-3 bg-white border border-slate-200 rounded-sm text-sm font-medium">
+                  <option>Working</option><option>Minor Issue</option><option>Major Fault</option><option>Under Repair</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Responsible Role *</label>
+                <select value={newAssetData.responsibleRole} onChange={e => setNewAssetData({ ...newAssetData, responsibleRole: e.target.value })} className="w-full h-10 px-3 bg-white border border-slate-200 rounded-sm text-sm font-medium">
+                  <option>ADMIN</option><option>OPERATOR</option>
+                </select>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <button type="submit" disabled={isSubmitting} className="h-10 px-6 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] shadow-sm transition-all border-b-2 border-[#0e221a] disabled:opacity-50">
+                {isSubmitting ? "Processing..." : "Register"}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };

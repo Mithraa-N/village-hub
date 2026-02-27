@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken, getUser } from "@/lib/auth";
 import { toast } from "sonner";
 import { UserPlus, Shield, UserCog, Power, PowerOff, Loader2 } from "lucide-react";
 
@@ -16,12 +16,15 @@ interface UserRecord {
 }
 
 const UserManagement = () => {
+    const currentUser = getUser();
+    const isOperator = currentUser?.role === "OPERATOR";
+
     const [formData, setFormData] = useState({
         username: "",
         mobile: "",
         name: "",
         password: "",
-        role: "OPERATOR",
+        role: isOperator ? "VIEWER" : "OPERATOR",
         department: ""
     });
     const [users, setUsers] = useState<UserRecord[]>([]);
@@ -171,12 +174,14 @@ const UserManagement = () => {
                             <div className="space-y-1">
                                 <label className="block text-[10px] font-bold uppercase text-slate-500 tracking-tight">System Role</label>
                                 <select
-                                    className="w-full h-11 px-3 bg-white border border-slate-200 rounded-sm text-xs font-bold uppercase outline-none focus:border-primary"
+                                    className="w-full h-11 px-3 bg-white border border-slate-200 rounded-sm text-xs font-bold uppercase outline-none focus:border-primary disabled:opacity-50"
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                    disabled={isOperator}
                                 >
-                                    <option value="OPERATOR">OPERATOR</option>
-                                    <option value="ADMIN">ADMINISTRATOR</option>
+                                    {!isOperator && <option value="OPERATOR">OPERATOR</option>}
+                                    {!isOperator && <option value="ADMIN">ADMINISTRATOR</option>}
+                                    <option value="VIEWER">VIEWER</option>
                                 </select>
                             </div>
                             <div className="space-y-1">
@@ -229,15 +234,15 @@ const UserManagement = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {users.filter(u => u.role !== 'VIEWER').map(u => (
+                                {users.map(u => (
                                     <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-5 py-4">
                                             <div className="font-bold text-slate-800 text-xs">{u.name}</div>
                                             <div className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">@{u.username} · Mob: {u.mobile}</div>
                                         </td>
                                         <td className="px-5 py-4">
-                                            <span className={`px-2 py-0.5 rounded-sm text-[9px] font-bold uppercase ${u.role === 'ADMIN' ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600'}`}>
-                                                {u.role === 'ADMIN' ? 'Administrator' : 'Operator'}
+                                            <span className={`px-2 py-0.5 rounded-sm text-[9px] font-bold uppercase ${u.role === 'ADMIN' ? 'bg-primary text-white' : u.role === 'OPERATOR' ? 'bg-slate-200 text-slate-600' : 'bg-blue-100 text-blue-700'}`}>
+                                                {u.role === 'ADMIN' ? 'Administrator' : u.role === 'OPERATOR' ? 'Operator' : 'Viewer'}
                                             </span>
                                             <div className="text-[10px] font-bold text-slate-400 uppercase mt-1">{u.department || 'General Administration'}</div>
                                         </td>
@@ -249,8 +254,14 @@ const UserManagement = () => {
                                         <td className="px-5 py-4 text-right">
                                             <button
                                                 onClick={() => toggleStatus(u.id, u.isActive)}
-                                                className={`px-3 py-1.5 rounded-sm text-[9px] font-bold uppercase transition-all shadow-sm border-b-2 ${u.isActive ? 'bg-white text-destructive border-slate-200 hover:bg-red-50' : 'bg-primary text-white border-[#0e221a] hover:bg-[#1a3d2e]'}`}
-                                                title={u.isActive ? "Revoke Access" : "Restore Access"}
+                                                disabled={isOperator && u.role !== 'VIEWER'}
+                                                className={`px-3 py-1.5 rounded-sm text-[9px] font-bold uppercase transition-all shadow-sm border-b-2 ${isOperator && u.role !== 'VIEWER'
+                                                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
+                                                        : u.isActive
+                                                            ? 'bg-white text-destructive border-slate-200 hover:bg-red-50'
+                                                            : 'bg-primary text-white border-[#0e221a] hover:bg-[#1a3d2e]'
+                                                    }`}
+                                                title={isOperator && u.role !== 'VIEWER' ? "Unauthorized" : u.isActive ? "Revoke Access" : "Restore Access"}
                                             >
                                                 {u.isActive ? "Revoke Access" : "Enable Access"}
                                             </button>

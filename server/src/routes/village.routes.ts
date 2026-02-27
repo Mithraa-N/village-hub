@@ -6,7 +6,7 @@ import { getUsers, toggleUserStatus } from "../controllers/user.controller";
 import {
     getAssets, createAsset, updateAsset,
     getComplaints, createComplaint, updateComplaintStatus,
-    getBudgets, createBudgetEntry, getDashboardSummary
+    getBudgets, createBudgetEntry, getDashboardSummary, getAuditLogs
 } from "../controllers/village.controller";
 
 const router = Router();
@@ -15,8 +15,8 @@ const router = Router();
 router.get("/dashboard/stats", authenticateToken, getDashboardSummary);
 
 // User Management
-router.get("/users", authenticateToken, authorizeRoles(Role.ADMIN), getUsers);
-router.post("/users", authenticateToken, authorizeRoles(Role.ADMIN), registerUser);
+router.get("/users", authenticateToken, authorizeRoles(Role.ADMIN, Role.OPERATOR), getUsers);
+router.post("/users", authenticateToken, authorizeRoles(Role.ADMIN, Role.OPERATOR), registerUser);
 router.patch("/users/:id/status", authenticateToken, authorizeRoles(Role.ADMIN), toggleUserStatus);
 
 // Assets
@@ -32,6 +32,9 @@ router.patch("/complaints/:id/status", authenticateToken, authorizeRoles(Role.AD
 // Budgets
 router.get("/budgets", authenticateToken, authorizeRoles(Role.ADMIN), getBudgets);
 router.post("/budgets", authenticateToken, authorizeRoles(Role.ADMIN), createBudgetEntry);
+
+// Audit Logs
+router.get("/audit-logs", authenticateToken, authorizeRoles(Role.ADMIN), getAuditLogs);
 
 export default router;
 

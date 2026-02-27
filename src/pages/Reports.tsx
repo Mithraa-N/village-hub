@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/AppLayout";
 import { BarChart3, FileText, Download } from "lucide-react";
+import { toast } from "sonner";
 
 const Reports = () => {
     const reports = [
@@ -7,6 +8,10 @@ const Reports = () => {
         { id: "REP-2026-002", title: "Budget Utilization Summary (Consolidated)", date: "Q3 2025-26", type: "XLSX", classification: "Internal" },
         { id: "REP-2026-003", title: "Citizen Grievance Resolution Audit", date: "Jan 2026", type: "PDF", classification: "Authorized" },
     ];
+
+    const handleGenerateReport = () => {
+        toast.info("Report Module initializing...", { description: "Custom Report Generator will be enabled in the final deployment." });
+    };
 
     return (
         <AppLayout>
@@ -18,7 +23,10 @@ const Reports = () => {
                     </h1>
                     <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">Official Documentation & System Audit Logs</p>
                 </div>
-                <button className="h-10 px-6 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] shadow-sm transition-all border-b-2 border-[#0e221a]">
+                <button
+                    onClick={handleGenerateReport}
+                    className="h-10 px-6 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] shadow-sm transition-all border-b-2 border-[#0e221a]"
+                >
                     Generate Custom Report
                 </button>
             </div>
@@ -108,7 +116,10 @@ const Reports = () => {
                                             </span>
                                         </td>
                                         <td className="px-5 py-4 text-right">
-                                            <button className="h-8 px-4 bg-white border border-slate-200 text-primary font-bold text-[9px] uppercase tracking-widest rounded-sm hover:bg-slate-50 transition-all shadow-sm">
+                                            <button
+                                                onClick={handleGenerateReport}
+                                                className="h-8 px-4 bg-white border border-slate-200 text-primary font-bold text-[9px] uppercase tracking-widest rounded-sm hover:bg-slate-50 transition-all shadow-sm"
+                                            >
                                                 Download {r.type}
                                             </button>
                                         </td>

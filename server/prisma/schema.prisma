@@ -54,6 +54,7 @@ model Complaint {
   assignedTo    String?   // Name of staff
   submittedDate DateTime  @default(now())
   resolvedDate  DateTime?
+  closingRemark String?
   ward          String
   assetId       String?
   asset         Asset?    @relation(fields: [assetId], references: [id])
@@ -72,9 +73,11 @@ model BudgetEntry {
 
 model AuditLog {
   id        String   @id @default(uuid())
-  userId    String?
+  userId    String
+  userRole  String
   action    String
-  resource  String?
+  module    String
+  recordId  String?
   details   String?
   timestamp DateTime @default(now())
 }

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
-import { logAuthEvent } from "../utils/logger";
+import { logAuditEvent } from "../utils/logger";
 import { Role } from "../types";
 
 const prisma = new PrismaClient();
@@ -23,13 +23,13 @@ export const login = async (req: Request, res: Response) => {
         });
 
         if (!user || !user.isActive) {
-            await logAuthEvent(null, "FAILED_LOGIN", `Attempt for identifier: ${identifier}`, "AUTH");
+            await logAuditEvent("SYSTEM", "GUEST", "FAILED_LOGIN", "Authentication", undefined, `Attempt for identifier: ${identifier}`);
             return res.status(401).json({ message: "Invalid credentials or account disabled" });
         }
 
         const isMatch = await bcrypt.compare(password, user.passwordHash);
         if (!isMatch) {
-            await logAuthEvent(user.id, "FAILED_LOGIN", "Invalid password", "AUTH");
+            await logAuditEvent(user.id, user.role, "FAILED_LOGIN", "Authentication", undefined, "Invalid password");
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
@@ -56,7 +56,7 @@ export const login = async (req: Request, res: Response) => {
             data: { lastLogin: new Date() }
         });
 
-        await logAuthEvent(user.id, "LOGIN_SUCCESS", "User logged in successfully", "AUTH");
+        await logAuditEvent(user.id, user.role, "LOGIN_SUCCESS", "Authentication");
 
         res.json({
             accessToken,
@@ -86,7 +86,7 @@ export const logout = async (req: Request, res: Response) => {
         }
 
         if (req.user) {
-            await logAuthEvent(req.user.id, "LOGOUT", "User logged out", "AUTH");
+            await logAuditEvent(req.user.id, req.user.role, "LOGOUT", "Authentication");
         }
 
         res.json({ message: "Logged out successfully" });
@@ -154,7 +154,7 @@ export const signup = async (req: Request, res: Response) => {
             }
         });
 
-        await logAuthEvent(newUser.id, "USER_SIGNUP", "Viewer account created via public signup", "USER");
+        await logAuditEvent(newUser.id, newUser.role, "USER_SIGNUP", "User Management", newUser.id, "Viewer account created via public signup");
 
         res.status(201).json({
             message: "Account created successfully as Viewer",
@@ -170,9 +170,12 @@ export const registerUser = async (req: Request, res: Response) => {
     // This controller is intended for Admins creating other users
     const { username, mobile, password, name, role, department } = req.body;
 
-    // Check if requester is Admin (middleware should handle this, but being extra safe)
     if (req.user?.role !== Role.ADMIN) {
-        return res.status(403).json({ message: "Only admins can register other staff members" });
+        if (req.user?.role === Role.OPERATOR && role === Role.VIEWER) {
+            // Operators can create Viewer accounts
+        } else {
+            return res.status(403).json({ message: "Only Admins can register staff members, Operators can only create Viewers." });
+        }
     }
 
     try {
@@ -200,7 +203,7 @@ export const registerUser = async (req: Request, res: Response) => {
             }
         });
 
-        await logAuthEvent(req.user.id, "USER_CREATION", `Admin created user ${newUser.id} with role ${role}`, "USER");
+        await logAuditEvent(req.user.id, req.user.role, "CREATE_USER", "User Management", newUser.id, `Admin created user ${newUser.id} with role ${role}`);
 
         res.status(201).json({
             message: `User created successfully as ${role}`,

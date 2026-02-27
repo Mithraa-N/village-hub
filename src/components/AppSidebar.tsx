@@ -11,6 +11,7 @@ import {
   User as UserIcon,
   UserCog,
   FileBarChart,
+  Shield,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -27,8 +28,9 @@ export function AppSidebar() {
     { title: "ASSETS", url: "/ops/assets", icon: Building2, roles: ["ADMIN", "OPERATOR"] },
     { title: "GRIEVANCES", url: "/complaints", icon: MessageSquareWarning, roles: ["ADMIN", "OPERATOR"] },
     { title: "BUDGET", url: "/admin/budget", icon: IndianRupee, roles: ["ADMIN"] },
-    { title: "USER MANAGEMENT", url: "/admin/users", icon: UserCog, roles: ["ADMIN"] },
+    { title: "USER MANAGEMENT", url: "/admin/users", icon: UserCog, roles: ["ADMIN", "OPERATOR"] },
     { title: "SYSTEM REPORTS", url: "/admin/reports", icon: FileBarChart, roles: ["ADMIN"] },
+    { title: "AUDIT LOGS", url: "/admin/audit-logs", icon: Shield, roles: ["ADMIN"] },
   ].filter(item => user && item.roles.includes(user.role));
 
   const handleLogout = () => {

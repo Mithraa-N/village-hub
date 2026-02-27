@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { getAuthToken } from "@/lib/auth";
 import { Loader2, TrendingUp, Wallet, Banknote, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface BudgetEntry {
   id: string;
@@ -19,6 +20,59 @@ interface BudgetEntry {
 const Budget = () => {
   const [entries, setEntries] = useState<BudgetEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({ category: "", allocated: "", spent: "0", linkedActivity: "", fiscalYear: "" });
+
+  const validateAndSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.category || !formData.allocated || !formData.linkedActivity || !formData.fiscalYear) {
+      toast.error("Validation Error: Mandatory fields (Category, Allocation, Activity, Fiscal Year) cannot be empty.");
+      return;
+    }
+    const allocNum = Number(formData.allocated);
+    const spentNum = Number(formData.spent);
+    if (isNaN(allocNum) || allocNum < 0) {
+      toast.error("Validation Error: Allocation must be a valid positive number.");
+      return;
+    }
+    if (isNaN(spentNum) || spentNum < 0) {
+      toast.error("Validation Error: Spent amount must be a valid positive number.");
+      return;
+    }
+    if (spentNum > allocNum) {
+      toast.error("Regulatory Violation: Budget spent must never exceed budget allocated.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/v1/budgets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAuthToken()}`
+        },
+        body: JSON.stringify({
+          category: formData.category,
+          allocated: allocNum,
+          spent: spentNum,
+          linkedActivity: formData.linkedActivity,
+          fiscalYear: formData.fiscalYear
+        })
+      });
+      if (response.ok) {
+        toast.success("Budget entry securely allocated");
+        fetchBudgets();
+        setIsDialogOpen(false);
+        setFormData({ category: "", allocated: "", spent: "0", linkedActivity: "", fiscalYear: "" });
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Server rejected submission");
+      }
+    } catch (err) {
+      toast.error("Network communication failure");
+    }
+  };
 
   const fetchBudgets = async () => {
     try {
@@ -74,9 +128,47 @@ const Budget = () => {
             <span className="text-[10px] font-bold text-slate-400 block uppercase">Total Utilization</span>
             <span className="text-lg font-bold text-primary">{Math.round((totalSpent / totalAllocated) * 100)}%</span>
           </div>
-          <button className="h-10 px-6 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] shadow-sm transition-all border-b-2 border-[#0e221a]">
-            Expenditure Report
-          </button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <button className="h-10 px-6 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] shadow-sm transition-all border-b-2 border-[#0e221a]">
+                New Allocation
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold uppercase tracking-tight text-slate-800">Record Allocation</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={validateAndSubmit} className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Head of Account / Category *</label>
+                  <input type="text" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full h-10 px-3 border border-slate-200 rounded-sm text-sm outline-none focus:border-primary" placeholder="e.g. Infrastructure, Health" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Linked Activity *</label>
+                  <input type="text" value={formData.linkedActivity} onChange={e => setFormData({ ...formData, linkedActivity: e.target.value })} className="w-full h-10 px-3 border border-slate-200 rounded-sm text-sm outline-none focus:border-primary" placeholder="e.g. School Repair" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Allocated Amount *</label>
+                    <input type="number" min="0" value={formData.allocated} onChange={e => setFormData({ ...formData, allocated: e.target.value })} className="w-full h-10 px-3 border border-slate-200 rounded-sm text-sm outline-none focus:border-primary" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Already Spent</label>
+                    <input type="number" min="0" value={formData.spent} onChange={e => setFormData({ ...formData, spent: e.target.value })} className="w-full h-10 px-3 border border-slate-200 rounded-sm text-sm outline-none focus:border-primary" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Fiscal Year *</label>
+                  <input type="text" value={formData.fiscalYear} onChange={e => setFormData({ ...formData, fiscalYear: e.target.value })} className="w-full h-10 px-3 border border-slate-200 rounded-sm text-sm outline-none focus:border-primary" placeholder="e.g. 2025-26" />
+                </div>
+                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                  <button type="submit" className="h-10 px-6 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-[#1a3d2e] transition-all">
+                    Authorize Entry
+                  </button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 5000;
 // Security Middleware
 app.use(helmet());
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:8080"],
+    origin: ["http://localhost:5173", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082"],
     credentials: true
 }));
 app.use(morgan("combined"));

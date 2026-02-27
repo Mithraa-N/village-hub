@@ -11,6 +11,7 @@ import Budget from "./pages/Budget";
 import Login from "./pages/Login";
 import UserManagement from "./pages/UserManagement";
 import Reports from "./pages/Reports";
+import AuditLogs from "./pages/AuditLogs";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 
@@ -77,7 +78,7 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="/admin/users" element={
-            <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <ProtectedRoute allowedRoles={["ADMIN", "OPERATOR"]}>
               <UserManagement />
             </ProtectedRoute>
           } />
@@ -89,6 +90,11 @@ const App = () => (
           <Route path="/admin/reports" element={
             <ProtectedRoute allowedRoles={["ADMIN"]}>
               <Reports />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/audit-logs" element={
+            <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <AuditLogs />
             </ProtectedRoute>
           } />
 
