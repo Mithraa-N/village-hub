@@ -6,7 +6,7 @@ import { getUsers, toggleUserStatus } from "../controllers/user.controller";
 import {
     getAssets, createAsset, updateAsset,
     getComplaints, createComplaint, updateComplaintStatus,
-    getBudgets, createBudgetEntry, getDashboardSummary, getAuditLogs
+    getBudgets, createBudgetEntry, getDashboardSummary, getAuditLogs, getReports
 } from "../controllers/village.controller";
 
 const router = Router();
@@ -35,6 +35,9 @@ router.post("/budgets", authenticateToken, authorizeRoles(Role.ADMIN), createBud
 
 // Audit Logs
 router.get("/audit-logs", authenticateToken, authorizeRoles(Role.ADMIN), getAuditLogs);
+
+// Reports
+router.get("/reports", authenticateToken, authorizeRoles(Role.ADMIN), getReports);
 
 export default router;
 

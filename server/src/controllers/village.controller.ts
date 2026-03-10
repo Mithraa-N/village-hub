@@ -147,6 +147,7 @@ export const createBudgetEntry = async (req: Request, res: Response) => {
         res.status(201).json(entry);
         await logAuditEvent(req.user?.id || "SYSTEM", req.user?.role || "SYSTEM", "CREATE_BUDGET_ENTRY", "Budget Management", entry.id, `Allocated ${entry.allocated} to ${entry.category}`);
     } catch (error) {
+        console.error("Budget Injection Error:", error);
         res.status(500).json({ message: "Error creating budget entry" });
     }
 };
@@ -231,3 +232,13 @@ export const getAuditLogs = async (req: Request, res: Response) => {
     }
 };
 
+// REPORTS
+export const getReports = async (req: Request, res: Response) => {
+    try {
+        // Return an empty array to represent 'no reports generated yet'
+        // This avoids hardcoded predefined reports.
+        res.json([]);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching reports" });
+    }
+};
